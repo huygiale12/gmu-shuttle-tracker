@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GMU Shuttle Tracker</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;600;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --route-blue: #0066FF;
+            --route-green: #00CC66;
+            --route-orange: #FF6B35;
+            --route-purple: #9D4EDD;
+            --route-red: #EE4266;
+            --bg-dark: #0A0E17;
+            --bg-surface: #151922;
+            --bg-elevated: #1E242E;
+            --text-primary: #F8F9FA;
+            --text-secondary: #ADB5BD;
+            --text-dim: #6C757D;
+            --accent-glow: rgba(0, 102, 255, 0.3);
+            --border-subtle: rgba(255, 255, 255, 0.08);
+            --success: #10B981;
+            --warning: #F59E0B;
+            --danger: #EF4444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Archivo', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        #root {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .app-header {
+            background: var(--bg-surface);
+            border-bottom: 1px solid var(--border-subtle);
+            padding: 1rem 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+            z-index: 100;
+            backdrop-filter: blur(20px);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--route-blue), var(--route-purple));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            font-size: 1.25rem;
+            box-shadow: 0 4px 12px rgba(0, 102, 255, 0.3);
+        }
+
+        .logo-text {
+            display: flex;
+            flex-direction: column;
+            line-height: 1.2;
+        }
+
+        .logo-title {
+            font-weight: 900;
+            font-size: 1.25rem;
+            letter-spacing: -0.02em;
+        }
+
+        .logo-subtitle {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .status-badge {
+            background: var(--bg-elevated);
+            padding: 0.4rem 0.9rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border: 1px solid var(--border-subtle);
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--success);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(1.2); }
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .mode-toggle {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-subtle);
+            border-radius: 24px;
+            padding: 0.25rem;
+            display: flex;
+            gap: 0.25rem;
+        }
+
+        .mode-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-family: 'Archivo', sans-serif;
+        }
+
+        .mode-btn.active {
+            background: var(--route-blue);
+            color: white;
+            box-shadow: 0 2px 8px rgba(0, 102, 255, 0.3);
+        }
+
+        .app-main {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 380px;
+            background: var(--bg-surface);
+            border-right: 1px solid var(--border-subtle);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .sidebar-section {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .section-title {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-dim);
+            margin-bottom: 1rem;
+        }
+
+        .route-filters {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .route-filter {
+            background: var(--bg-elevated);
+            border: 2px solid transparent;
+            border-radius: 12px;
+            padding: 1rem;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .route-filter:hover {
+            background: var(--bg-dark);
+            transform: translateX(4px);
+        }
+
+        .route-filter.active {
+            border-color: currentColor;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .route-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .route-color {
+            width: 4px;
+            height: 40px;
+            border-radius: 2px;
+            flex-shrink: 0;
+        }
+
+        .route-details h3 {
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        .route-details p {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .route-count {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .shuttle-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.5rem;
+        }
+
+        .shuttle-card {
+            background: var(--bg-elevated);
+            border-radius: 12px;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+            border-left: 4px solid;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+        }
+
+        .shuttle-card:hover {
+            background: var(--bg-dark);
+            transform: translateX(4px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .shuttle-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.75rem;
+        }
+
+        .shuttle-id {
+            font-weight: 700;
+            font-size: 1.1rem;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .shuttle-status {
+            padding: 0.35rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .status-on-time {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success);
+        }
+
+        .status-delayed {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--warning);
+        }
+
+        .shuttle-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+            font-size: 0.85rem;
+        }
+
+        .info-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .info-label {
+            color: var(--text-dim);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 600;
+        }
+
+        .info-value {
+            font-weight: 600;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .map-container {
+            flex: 1;
+            background: var(--bg-dark);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .map-canvas {
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 30%, rgba(0, 102, 255, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(157, 78, 221, 0.05) 0%, transparent 50%),
+                linear-gradient(180deg, var(--bg-dark) 0%, #0D1117 100%);
+            position: relative;
+        }
+
+        .route-line {
+            position: absolute;
+            height: 3px;
+            border-radius: 2px;
+            opacity: 0.4;
+            transition: opacity 0.3s;
+        }
+
+        .route-line.active {
+            opacity: 1;
+            filter: drop-shadow(0 0 8px currentColor);
+        }
+
+        .shuttle-marker {
+            position: absolute;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: var(--bg-elevated);
+            border: 3px solid;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+            z-index: 10;
+        }
+
+        .shuttle-marker:hover {
+            transform: scale(1.2);
+            z-index: 20;
+            box-shadow: 0 0 20px currentColor;
+        }
+
+        .shuttle-marker::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: currentColor;
+            opacity: 0.2;
+            animation: ripple 2s ease-out infinite;
+        }
+
+        @keyframes ripple {
+            0% {
+                transform: scale(1);
+                opacity: 0.3;
+            }
+            100% {
+                transform: scale(2);
+                opacity: 0;
+            }
+        }
+
+        .stop-marker {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--bg-elevated);
+            border: 2px solid;
+            cursor: pointer;
+            transition: all 0.3s;
+            z-index: 5;
+        }
+
+        .stop-marker:hover {
+            transform: scale(1.5);
+            box-shadow: 0 0 12px currentColor;
+        }
+
+        .booking-panel {
+            position: absolute;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--bg-surface);
+            border-radius: 16px;
+            padding: 2rem;
+            min-width: 400px;
+            border: 1px solid var(--border-subtle);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+            animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+
+        .booking-title {
+            font-size: 1.5rem;
+            font-weight: 900;
+            margin-bottom: 1.5rem;
+        }
+
+        .input-group {
+            margin-bottom: 1rem;
+        }
+
+        .input-label {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-dim);
+            margin-bottom: 0.5rem;
+        }
+
+        .input-field {
+            width: 100%;
+            background: var(--bg-elevated);
+            border: 2px solid var(--border-subtle);
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            color: var(--text-primary);
+            font-size: 1rem;
+            font-family: 'Archivo', sans-serif;
+            transition: all 0.3s;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: var(--route-blue);
+            box-shadow: 0 0 0 3px rgba(0, 102, 255, 0.1);
+        }
+
+        .booking-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 1rem;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            border: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-family: 'Archivo', sans-serif;
+        }
+
+        .btn-primary {
+            background: var(--route-blue);
+            color: white;
+            box-shadow: 0 4px 12px rgba(0, 102, 255, 0.3);
+        }
+
+        .btn-primary:hover {
+            background: #0052CC;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0, 102, 255, 0.4);
+        }
+
+        .btn-secondary {
+            background: var(--bg-elevated);
+            color: var(--text-primary);
+            border: 2px solid var(--border-subtle);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-dark);
+            border-color: var(--text-dim);
+        }
+
+        .notification {
+            position: fixed;
+            top: 5rem;
+            right: 2rem;
+            background: var(--bg-surface);
+            border-radius: 12px;
+            padding: 1.25rem;
+            border-left: 4px solid;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+            min-width: 320px;
+            animation: slideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 1000;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .notification-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+
+        .notification-title {
+            font-weight: 700;
+            font-size: 1rem;
+        }
+
+        .notification-time {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .notification-message {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-surface);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--bg-elevated);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-dim);
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid var(--text-dim);
+            border-top-color: var(--route-blue);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                max-height: 40vh;
+            }
+            
+            .app-main {
+                flex-direction: column;
+            }
+            
+            .booking-panel {
+                min-width: auto;
+                width: calc(100% - 2rem);
+                left: 1rem;
+                right: 1rem;
+                transform: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        const ROUTES = [
+            { id: 'BLUE', name: 'Blue Line', color: '#0066FF', path: 'Campus Core → Mason Pond → Rappahannock' },
+            { id: 'GREEN', name: 'Green Line', color: '#00CC66', path: 'Fairfax Campus → Innovation Hall → Transit Center' },
+            { id: 'ORANGE', name: 'Orange Line', color: '#FF6B35', path: 'West Campus → Student Union → Research Hall' },
+            { id: 'PURPLE', name: 'Purple Line', color: '#9D4EDD', path: 'Housing → Recreation Center → Library' },
+            { id: 'RED', name: 'Red Line', color: '#EE4266', path: 'Metro Station → Arlington Campus → Fairfax' }
+        ];
+
+        const generateShuttles = () => {
+            return ROUTES.flatMap(route => [
+                {
+                    id: `${route.id}-01`,
+                    route: route.id,
+                    routeName: route.name,
+                    color: route.color,
+                    location: 'Campus Core',
+                    nextStop: 'Mason Pond',
+                    eta: Math.floor(Math.random() * 15) + 2,
+                    capacity: 30,
+                    occupancy: Math.floor(Math.random() * 30),
+                    delay: Math.random() > 0.7 ? Math.floor(Math.random() * 8) : 0,
+                    position: { x: 20 + Math.random() * 60, y: 20 + Math.random() * 60 }
+                },
+                {
+                    id: `${route.id}-02`,
+                    route: route.id,
+                    routeName: route.name,
+                    color: route.color,
+                    location: 'Transit Center',
+                    nextStop: 'Research Hall',
+                    eta: Math.floor(Math.random() * 15) + 2,
+                    capacity: 30,
+                    occupancy: Math.floor(Math.random() * 30),
+                    delay: Math.random() > 0.7 ? Math.floor(Math.random() * 8) : 0,
+                    position: { x: 30 + Math.random() * 60, y: 30 + Math.random() * 60 }
+                }
+            ]);
+        };
+
+        function App() {
+            const [mode, setMode] = useState('scheduled');
+            const [selectedRoute, setSelectedRoute] = useState(null);
+            const [shuttles, setShuttles] = useState(generateShuttles());
+            const [notifications, setNotifications] = useState([]);
+            const [showBooking, setShowBooking] = useState(false);
+            const [updateTime, setUpdateTime] = useState(new Date());
+            const lastUpdateRef = useRef(Date.now());
+
+            useEffect(() => {
+                const interval = setInterval(() => {
+                    setShuttles(prev => prev.map(shuttle => {
+                        const newX = shuttle.position.x + (Math.random() - 0.5) * 3;
+                        const newY = shuttle.position.y + (Math.random() - 0.5) * 3;
+                        
+                        return {
+                            ...shuttle,
+                            position: {
+                                x: Math.max(10, Math.min(90, newX)),
+                                y: Math.max(10, Math.min(90, newY))
+                            }
+                        };
+                    }));
+                    setUpdateTime(new Date());
+                    lastUpdateRef.current = Date.now();
+                }, 3000);
+
+                return () => clearInterval(interval);
+            }, []);
+
+            useEffect(() => {
+                const interval = setInterval(() => {
+                    shuttles.forEach(shuttle => {
+                        if (shuttle.delay > 5) {
+                            addNotification({
+                                title: `${shuttle.routeName} Delayed`,
+                                message: `Shuttle ${shuttle.id} is running ${shuttle.delay} minutes behind schedule`,
+                                color: shuttle.color,
+                                time: new Date().toLocaleTimeString()
+                            });
+                        }
+                    });
+                }, 30000);
+
+                return () => clearInterval(interval);
+            }, [shuttles]);
+
+            const addNotification = (notification) => {
+                setNotifications(prev => {
+                    const newNotifs = [notification, ...prev].slice(0, 3);
+                    setTimeout(() => {
+                        setNotifications(current => current.filter(n => n !== notification));
+                    }, 5000);
+                    return newNotifs;
+                });
+            };
+
+            const filteredShuttles = selectedRoute 
+                ? shuttles.filter(s => s.route === selectedRoute)
+                : shuttles;
+
+            const routeCounts = ROUTES.map(route => ({
+                ...route,
+                count: shuttles.filter(s => s.route === route.id).length
+            }));
+
+            return (
+                <>
+                    <header className="app-header">
+                        <div className="header-left">
+                            <div className="logo">
+                                <div className="logo-icon">S</div>
+                                <div className="logo-text">
+                                    <div className="logo-title">GMU Shuttle</div>
+                                    <div className="logo-subtitle">Live Tracking System</div>
+                                </div>
+                            </div>
+                            <div className="status-badge">
+                                <div className="status-dot"></div>
+                                <span>System Operational</span>
+                            </div>
+                        </div>
+                        <div className="header-right">
+                            <div className="mode-toggle">
+                                <button 
+                                    className={`mode-btn ${mode === 'scheduled' ? 'active' : ''}`}
+                                    onClick={() => {
+                                        setMode('scheduled');
+                                        setShowBooking(false);
+                                    }}
+                                >
+                                    Scheduled Service
+                                </button>
+                                <button 
+                                    className={`mode-btn ${mode === 'on-demand' ? 'active' : ''}`}
+                                    onClick={() => {
+                                        setMode('on-demand');
+                                        setShowBooking(true);
+                                    }}
+                                >
+                                    On-Demand
+                                </button>
+                            </div>
+                        </div>
+                    </header>
+
+                    <main className="app-main">
+                        <aside className="sidebar">
+                            <div className="sidebar-section">
+                                <h2 className="section-title">Routes</h2>
+                                <div className="route-filters">
+                                    {routeCounts.map(route => (
+                                        <div 
+                                            key={route.id}
+                                            className={`route-filter ${selectedRoute === route.id ? 'active' : ''}`}
+                                            style={{ color: route.color }}
+                                            onClick={() => setSelectedRoute(
+                                                selectedRoute === route.id ? null : route.id
+                                            )}
+                                        >
+                                            <div className="route-info">
+                                                <div 
+                                                    className="route-color" 
+                                                    style={{ background: route.color }}
+                                                />
+                                                <div className="route-details">
+                                                    <h3>{route.name}</h3>
+                                                    <p>{route.path}</p>
+                                                </div>
+                                            </div>
+                                            <div className="route-count">{route.count}</div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="shuttle-list">
+                                <h2 className="section-title">
+                                    Active Shuttles ({filteredShuttles.length})
+                                </h2>
+                                {filteredShuttles.map(shuttle => (
+                                    <div 
+                                        key={shuttle.id}
+                                        className="shuttle-card"
+                                        style={{ borderColor: shuttle.color }}
+                                    >
+                                        <div className="shuttle-header">
+                                            <div className="shuttle-id" style={{ color: shuttle.color }}>
+                                                {shuttle.id}
+                                            </div>
+                                            <div className={`shuttle-status ${shuttle.delay > 5 ? 'status-delayed' : 'status-on-time'}`}>
+                                                {shuttle.delay > 5 ? `+${shuttle.delay} min` : 'On Time'}
+                                            </div>
+                                        </div>
+                                        <div className="shuttle-info">
+                                            <div className="info-item">
+                                                <div className="info-label">Current</div>
+                                                <div className="info-value">{shuttle.location}</div>
+                                            </div>
+                                            <div className="info-item">
+                                                <div className="info-label">Next Stop</div>
+                                                <div className="info-value">{shuttle.nextStop}</div>
+                                            </div>
+                                            <div className="info-item">
+                                                <div className="info-label">ETA</div>
+                                                <div className="info-value">{shuttle.eta} min</div>
+                                            </div>
+                                            <div className="info-item">
+                                                <div className="info-label">Occupancy</div>
+                                                <div className="info-value">
+                                                    {shuttle.occupancy}/{shuttle.capacity}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </aside>
+
+                        <div className="map-container">
+                            <div className="map-canvas">
+                                {ROUTES.map(route => (
+                                    <div
+                                        key={route.id}
+                                        className={`route-line ${!selectedRoute || selectedRoute === route.id ? 'active' : ''}`}
+                                        style={{
+                                            background: route.color,
+                                            left: '10%',
+                                            right: '10%',
+                                            top: `${20 + ROUTES.indexOf(route) * 15}%`,
+                                        }}
+                                    />
+                                ))}
+
+                                {filteredShuttles.map(shuttle => (
+                                    <div
+                                        key={shuttle.id}
+                                        className="shuttle-marker"
+                                        style={{
+                                            borderColor: shuttle.color,
+                                            color: shuttle.color,
+                                            left: `${shuttle.position.x}%`,
+                                            top: `${shuttle.position.y}%`,
+                                            transform: 'translate(-50%, -50%)'
+                                        }}
+                                        title={`${shuttle.id} - ${shuttle.location}`}
+                                    >
+                                        🚐
+                                    </div>
+                                ))}
+
+                                {[15, 30, 45, 60, 75].map((pos, i) => (
+                                    ROUTES.map((route, j) => (
+                                        <div
+                                            key={`${route.id}-${i}`}
+                                            className="stop-marker"
+                                            style={{
+                                                borderColor: route.color,
+                                                left: `${pos}%`,
+                                                top: `${20 + j * 15}%`,
+                                                transform: 'translate(-50%, -50%)'
+                                            }}
+                                        />
+                                    ))
+                                ))}
+                            </div>
+
+                            {showBooking && (
+                                <div className="booking-panel">
+                                    <h2 className="booking-title">Request a Ride</h2>
+                                    <div className="input-group">
+                                        <label className="input-label">Pickup Location</label>
+                                        <input 
+                                            type="text" 
+                                            className="input-field"
+                                            placeholder="Enter pickup location..."
+                                        />
+                                    </div>
+                                    <div className="input-group">
+                                        <label className="input-label">Drop-off Location</label>
+                                        <input 
+                                            type="text" 
+                                            className="input-field"
+                                            placeholder="Enter destination..."
+                                        />
+                                    </div>
+                                    <div className="booking-actions">
+                                        <button 
+                                            className="btn btn-secondary"
+                                            onClick={() => setShowBooking(false)}
+                                        >
+                                            Cancel
+                                        </button>
+                                        <button 
+                                            className="btn btn-primary"
+                                            onClick={() => {
+                                                addNotification({
+                                                    title: 'Ride Requested',
+                                                    message: 'Finding nearest available shuttle...',
+                                                    color: '#0066FF',
+                                                    time: new Date().toLocaleTimeString()
+                                                });
+                                                setTimeout(() => setShowBooking(false), 1000);
+                                            }}
+                                        >
+                                            Request Shuttle
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </main>
+
+                    {notifications.map((notif, i) => (
+                        <div 
+                            key={i}
+                            className="notification"
+                            style={{ 
+                                borderColor: notif.color,
+                                top: `${5 + i * 6}rem`
+                            }}
+                        >
+                            <div className="notification-header">
+                                <div className="notification-title">{notif.title}</div>
+                                <div className="notification-time">{notif.time}</div>
+                            </div>
+                            <div className="notification-message">{notif.message}</div>
+                        </div>
+                    ))}
+                </>
+            );
+        }
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
